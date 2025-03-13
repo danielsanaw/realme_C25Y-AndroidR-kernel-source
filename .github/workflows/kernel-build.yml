@@ -14,25 +14,28 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y clang llvm lld git wget curl bc flex bison \
-          build-essential gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
-          python3 python3-pip ccache libssl-dev
+          sudo apt install -y clang llvm lld gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu bc flex bison make python3 libssl-dev
 
-      - name: Set up environment
+      - name: Set up environment variables
         run: |
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           export CC=clang
 
-      - name: Generate kernel configuration
-        run: make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- defconfig
+      - name: Create output directory
+        run: |
+          mkdir -p out
 
-      - name: Compile Kernel
-        run: make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+      - name: Run defconfig
+        run: |
+          make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- RMX3265_defconfig
 
-      - name: Upload kernel image
+      - name: Compile kernel
+        run: |
+          make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+
+      - name: Upload compiled kernel
         uses: actions/upload-artifact@v4
         with:
-          name: Kernel-Image
+          name: kernel-image
           path: out/arch/arm64/boot/Image.gz-dtb
-
