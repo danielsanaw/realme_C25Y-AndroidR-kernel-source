@@ -1,0 +1,28 @@
+name: Kernel Build
+
+on: [push, workflow_dispatch]  # Triggers on push or manual run
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Kernel Source
+      uses: actions/checkout@v4
+
+    - name: Set Up Clang Toolchain
+      run: |
+        wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/b397f81060ce6d701042b782172ed13bee898b79.tar.gz -O clang.tar.gz
+        mkdir -p clang && tar -xf clang.tar.gz -C clang
+
+    - name: Compile Kernel
+      run: |
+        export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
+        export CROSS_COMPILE=aarch64-linux-gnu-
+        make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+
+    - name: Upload Compiled Kernel
+      uses: actions/upload-artifact@v4
+      with:
+        name: compiled-kernel
+        path: out/arch/arm64/boot/Image.gz-dtb
