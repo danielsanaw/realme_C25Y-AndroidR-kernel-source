@@ -11,24 +11,28 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y bc bison flex libssl-dev clang lld gcc-aarch64-linux-gnu
+          sudo apt install -y clang llvm lld git wget curl bc flex bison \
+          build-essential gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+          python3 python3-pip ccache libssl-dev
 
-      - name: Set Up Environment Variables
+      - name: Set up environment
         run: |
-          echo "CROSS_COMPILE=aarch64-linux-gnu-" >> $GITHUB_ENV
-          echo "CC=clang" >> $GITHUB_ENV
-          echo "ARCH=arm64" >> $GITHUB_ENV
+          export ARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          export CC=clang
+
+      - name: Generate kernel configuration
+        run: make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- defconfig
 
       - name: Compile Kernel
-        run: |
-          make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+        run: make O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
 
-      - name: Upload Kernel Image (if build succeeds)
-        if: success()
+      - name: Upload kernel image
         uses: actions/upload-artifact@v4
         with:
-          name: Kernel Image
+          name: Kernel-Image
           path: out/arch/arm64/boot/Image.gz-dtb
+
